@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>修辦之旅・點亮十盞心燈</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:"Noto Serif TC","PingFang TC","Microsoft JhengHei","Heiti TC",serif;color:#fff8e7;background:#0b1026}
+body{font-size:clamp(13px,min(1.4vw,2.3vh),30px)}
+button{font-family:inherit;cursor:pointer}
+.screen{position:fixed;inset:0;display:none;z-index:1}
+.screen.active{display:block}
+.sky{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 120%,#3a2a5c 0%,#161a3d 45%,#070a1c 100%)}
+.sky.dawn{background:radial-gradient(ellipse at 50% 120%,#ffb36b 0%,#b0577a 30%,#3b2f6b 65%,#0f1433 100%)}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.star{position:absolute;border-radius:50%;background:#fff;animation:tw 3s infinite alternate}
+@keyframes tw{from{opacity:.15}to{opacity:.9}}
+.float-light{position:absolute;width:9px;height:9px;border-radius:50%;background:#ffd98a;box-shadow:0 0 12px 4px #ffb84d;animation:rise linear infinite;opacity:0}
+@keyframes rise{0%{transform:translateY(0);opacity:0}10%{opacity:.9}100%{transform:translateY(-110vh);opacity:0}}
+
+#intro.active{display:flex;align-items:center;justify-content:center;text-align:center}
+.intro-box{position:relative;z-index:2;max-width:96vw}
+.intro-line{white-space:nowrap;font-size:min(2.1em,3.6vw);line-height:1.7;opacity:0;transform:translateY(20px);transition:all 1.2s ease;letter-spacing:.08em}
+.intro-line.show{opacity:1;transform:none}
+.intro-line.big{white-space:normal;font-size:min(2.9em,5vw);color:#ffd98a;text-shadow:0 0 30px rgba(255,190,90,.6);margin-top:.4em}
+.start-btn{margin-top:1.4em;font-size:1.5em;padding:.6em 1.8em;border-radius:99px;border:2px solid #ffd98a;background:rgba(255,200,100,.12);color:#ffe7b5;opacity:0;transition:all 1s;letter-spacing:.15em}
+.start-btn.show{opacity:1;animation:breath 2.4s infinite}
+.start-btn:hover{background:rgba(255,200,100,.3)}
+@keyframes breath{50%{box-shadow:0 0 35px rgba(255,200,100,.7)}}
+.hint{position:fixed;bottom:2vh;left:0;width:100%;text-align:center;font-size:.8em;opacity:.45;z-index:3}
+
+#map .title{position:absolute;top:3vh;left:3vw;z-index:3}
+#map .title h1{font-size:1.8em;letter-spacing:.12em;color:#ffe2a8;text-shadow:0 0 20px rgba(255,190,90,.5)}
+#map .title p{font-size:.95em;opacity:.8;margin-top:.3em}
+.progress{position:absolute;top:3vh;right:3vw;z-index:3;text-align:right}
+.progress .num{font-size:1.6em;color:#ffd98a}
+.lamps{display:flex;gap:.35em;justify-content:flex-end;margin-top:.3em}
+.lamps span{width:.9em;height:.9em;border-radius:50%;background:#3a3f63;transition:all .6s;cursor:pointer}
+.lamps span.on{background:#ffd26b;box-shadow:0 0 10px #ffb84d}
+.toolbar{position:absolute;top:calc(3vh + 4.2em);right:3vw;z-index:3;display:flex;gap:.5em}
+.toolbar button{font-size:.75em;padding:.35em .9em;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.06);color:#fff8e7;opacity:.6}
+.toolbar button:hover{opacity:1}
+.toolbar button.hl{opacity:.95;border-color:#ffd98a;color:#ffe7b5;background:rgba(255,200,100,.15)}
+.maphint{position:absolute;bottom:2vh;left:0;width:100%;text-align:center;font-size:.72em;opacity:.45;z-index:3}
+svg#road{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.seg{fill:none;stroke:#4b4f7a;stroke-width:5;stroke-dasharray:2 12;stroke-linecap:round;transition:all 1s}
+.seg.lit{stroke:#ffcf73;stroke-dasharray:none;filter:drop-shadow(0 0 6px #ffb84d)}
+.station{position:absolute;transform:translate(-50%,-50%);z-index:2;background:none;border:none;color:inherit;display:flex;flex-direction:column;align-items:center}
+.lantern{width:min(10vmin,5em);height:min(10vmin,5em);border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 40% 35%,#5c6190,#2a2e55);border:3px solid #7a7fb0;position:relative;transition:all .6s;animation:invite 2.6s infinite}
+.lantern .emo{font-size:min(5vmin,2.4em);filter:grayscale(.7) brightness(.8);transition:all .6s}
+.lantern .no{position:absolute;top:-.3em;left:-.3em;width:1.7em;height:1.7em;border-radius:50%;background:#1b1f45;border:2px solid #9aa0d0;font-size:.75em;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.lantern .no:hover{background:#ffb347;color:#3a2a1a;border-color:#fff}
+.station.lit .lantern .no{background:#ffb347;color:#3a2a1a;border-color:#fff3cf}
+@keyframes invite{50%{box-shadow:0 0 0 .45em rgba(160,170,255,.12)}}
+.station:hover .lantern{transform:scale(1.1)}
+.station.lit .lantern{background:radial-gradient(circle at 40% 35%,#fff1c4,#ffb347 60%,#d9762b);border-color:#ffe6a6;box-shadow:0 0 30px 8px rgba(255,180,70,.65);animation:glow 2.5s infinite}
+.station.lit .emo{filter:none}
+@keyframes glow{50%{box-shadow:0 0 45px 14px rgba(255,190,80,.8)}}
+.station .name{margin-top:.35em;font-size:1.1em;font-weight:bold;letter-spacing:.1em;text-shadow:0 2px 6px #000;white-space:nowrap}
+.station .time{font-size:.72em;opacity:.8;background:rgba(0,0,0,.4);padding:.1em .6em;border-radius:99px;margin-top:.15em;white-space:nowrap}
+.goal .lantern{width:min(12vmin,6em);height:min(12vmin,6em);background:radial-gradient(circle,#6a4d8a,#2c2050);border-color:#c9a0ff}
+.goal .lantern .emo{font-size:min(6vmin,2.9em)}
+.goal.ready .lantern{background:radial-gradient(circle,#fff6d8,#ffc766 55%,#e07b39);box-shadow:0 0 60px 20px rgba(255,200,90,.8)}
+.goal.ready .emo{filter:none}
+
+#panel{position:fixed;inset:0;z-index:10;background:rgba(5,7,20,.82);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center}
+#panel.active{display:flex;animation:fade .5s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.card{width:92vw;height:88vh;border-radius:1.4em;display:grid;grid-template-columns:30% 1fr;overflow:hidden;background:#fffaf0;color:#3a2a1a;box-shadow:0 20px 80px rgba(0,0,0,.6)}
+.card .left{padding:1.6em 1.4em;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden}
+.card .left .bigemo{font-size:5em;filter:drop-shadow(0 6px 12px rgba(0,0,0,.3));animation:bob 3s infinite}
+@keyframes bob{50%{transform:translateY(-10px)}}
+.card .left .step{font-size:.8em;letter-spacing:.2em;opacity:.85;margin-top:.6em}
+.card .left h2{font-size:2.4em;letter-spacing:.2em;margin:.15em 0}
+.card .left .tm{background:rgba(255,255,255,.2);padding:.25em 1em;border-radius:99px;font-size:.85em}
+.card .left .hook{margin-top:1em;font-size:1.2em;line-height:1.6;font-weight:bold}
+.card .left .core{margin-top:.9em;font-size:.85em;line-height:1.6;opacity:.9;background:rgba(0,0,0,.2);padding:.6em .9em;border-radius:.6em}
+.card .right{padding:1.6em 2.2em 1.3em;overflow:hidden;display:flex;flex-direction:column;gap:1.1em}
+.scene{font-size:1.2em;line-height:1.8;background:#fff1d6;border-left:.35em solid var(--c);padding:.8em 1.2em;border-radius:.4em}
+.scene b{color:var(--c)}
+.block{opacity:0;transform:translateY(24px);transition:all .7s ease;visibility:hidden}
+.block.show{opacity:1;transform:none;visibility:visible}
+.block h3{font-size:1.15em;color:var(--c);letter-spacing:.1em;margin-bottom:.5em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.55em .7em}
+.chip{padding:.45em 1em;border-radius:.5em;background:#fff;border:2px solid var(--c);font-size:1.05em;color:#3a2a1a}
+.chip.start{border-style:dashed;color:var(--c);font-weight:bold}
+.controls{margin-top:auto;display:flex;justify-content:space-between;align-items:center}
+.controls button{font-size:1em;padding:.55em 1.4em;border-radius:99px;border:none}
+.back{background:#e8e0d0;color:#5a4a3a}
+.next{background:var(--c);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.next.light{background:linear-gradient(90deg,#ffb347,#ff8c42);animation:breath 2s infinite}
+.dots{display:flex;gap:.4em}
+.dots i{width:.6em;height:.6em;border-radius:50%;background:#d8cdb8}
+.dots i.on{background:var(--c)}
+#flash{position:fixed;inset:0;z-index:20;pointer-events:none;background:radial-gradient(circle,rgba(255,220,140,.9),rgba(255,180,70,0) 60%);opacity:0}
+#flash.go{animation:flash 1.2s}
+@keyframes flash{30%{opacity:1}100%{opacity:0}}
+.toast{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);z-index:21;font-size:2.4em;color:#ffe3a3;text-shadow:0 0 25px #ff9d3b;pointer-events:none;opacity:0;letter-spacing:.15em;text-align:center}
+.toast.go{animation:toast 2s}
+@keyframes toast{20%{opacity:1;transform:translate(-50%,-60%)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%)}}
+
+#finale.active{display:flex;align-items:center;justify-content:center;text-align:center}
+.fin{position:relative;z-index:2;max-width:90vw}
+.fin h1{font-size:2.6em;color:#fff3cf;text-shadow:0 0 30px #ff9d3b;letter-spacing:.12em}
+.fin .l{font-size:1.3em;line-height:1.75;margin-top:.5em;opacity:0;transition:opacity 1.2s}
+.fin .l.show{opacity:1}
+.fin .l em{font-style:normal;color:#ffd98a}
+.pick{display:grid;grid-template-columns:repeat(5,1fr);gap:.8em;margin-top:1em;opacity:0;transition:opacity 1.2s}
+.pick.show{opacity:1}
+.pick button{padding:.55em .3em;font-size:1.05em;border-radius:.7em;border:2px solid rgba(255,220,150,.6);background:rgba(255,200,100,.12);color:#fff5dc;transition:all .3s}
+.pick button:hover,.pick button.sel{background:#ffb347;color:#3a2a1a;transform:scale(1.08);box-shadow:0 0 25px #ffb347}
+.cta{margin-top:1em;font-size:1.45em;color:#ffe0a0;opacity:0;transition:opacity 1.2s;letter-spacing:.1em;display:inline-block;padding:.4em 1.4em;border:2px solid #ffd98a;border-radius:99px}
+.cta.show{opacity:1;animation:breath 2.4s infinite}
+#finale .toolbar{position:fixed;top:auto;right:auto;bottom:2vh;left:3vw}
+#musicBtn{position:fixed;bottom:2vh;right:2vw;z-index:30;font-size:.85em;padding:.45em 1.1em;border-radius:99px;border:1px solid rgba(255,217,138,.6);background:rgba(20,20,50,.55);color:#ffe7b5;opacity:.75}
+#musicBtn:hover{opacity:1}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+<div id="stars"></div>
+
+<section class="screen active" id="intro">
+  <div class="intro-box">
+    <div class="intro-line">今天，道場要舉辦一場法會。</div>
+    <div class="intro-line">道親從四面八方而來……</div>
+    <div class="intro-line">您看見的是莊嚴的佛堂、有禮的接待、熱騰騰又美味的素食。</div>
+    <div class="intro-line big">但您想知道，<br>背後是誰，讓一切順利圓滿嗎？</div>
+    <button class="start-btn" id="startBtn">🪔一起踏上修辦之旅</button>
+  </div>
+  <div class="hint">點擊畫面或按「→」繼續</div>
+</section>
+
+<section class="screen" id="map">
+  <div class="title">
+    <h1>🪔 修辦之旅・點亮十盞心燈</h1>
+    <p>十組平行運作、互為分工、相互協助，共同完成道場任務</p>
+  </div>
+  <div class="progress">
+    <div>已點亮 <span class="num" id="litNum">0</span> / 10 盞心燈</div>
+    <div class="lamps" id="lamps"></div>
+  </div>
+  <div class="toolbar">
+    <button onclick="goIntro()">⌂ 回到開場</button>
+    <button id="allBtn" class="hl" onclick="toggleAll()">🪔 全部點亮</button>
+    <button onclick="resetAll()">↺ 重新開始</button>
+    <button onclick="showFinale()">✨ 看結尾</button>
+  </div>
+  <svg id="road" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+  <div id="stations"></div>
+  <div class="maphint">點燈籠：介紹該組 ｜ 按 H：回到開場 ｜ 點左上角數字或右上小圓點：點亮／熄滅該組 ｜ 全部點亮後即可前往「圓滿」</div>
+</section>
+
+<div id="panel"><div class="card" id="card"><div class="left" id="cLeft"></div><div class="right" id="cRight"></div></div></div>
+
+<section class="screen" id="finale">
+  <div class="fin">
+    <h1>✨ 十盞心燈，全部點亮了！</h1>
+    <div class="l">十組各有專業、<em>互為分工、相互協助</em>，才能共同完成道場任務。</div>
+    <div class="l">就好比我們這艘<em>救渡眾生的大法船</em>，是由千千萬萬個零件組裝起來的。<br>今天要是少了<em>一顆小螺絲釘</em>，這艘船能航行得遠嗎？</div>
+    <div class="l">讓我們一起在道場<em>盡心了愿</em>，就是在實務中修行——<br>成全別人，也修煉自己的心性。</div>
+    <div class="l">我們可依自己的<em>專業與興趣</em>，自由選擇<em>任何一組</em>參與。</div>
+    <div class="l" style="font-size:1.6em;color:#fff3cf">這條修道路上，下一盞燈——由您點亮。<br>您，想點亮哪一盞？</div>
+    <div class="pick" id="pick"></div>
+    <div class="cta" id="cta">🙏 課後歡迎向带班講師報名</div>
+  </div>
+  <div class="toolbar">
+    <button onclick="goIntro()">⌂ 回到開場</button>
+    <button onclick="go('map')">← 回到地圖</button>
+    <button onclick="resetAll()">↺ 重新開始</button>
+  </div>
+</section>
+
+<button id="musicBtn" onclick="toggleMusic()">🎵 音樂：開</button>
+<div id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const G=[
+{n:"道務組",e:"🪷",c:"#9b4dca",t:"渡人成全",
+ hook:"學習菩薩心、<br>菩薩行",
+ core:"學習如何渡人、成全人，救渡眾生，替上天找回原胎佛子，替師尊師母找到好弟子。",
+ scene:"佛堂莊嚴肅穆。<b>您</b>協助法會壇務，看著新求道的道親眼中發亮。法會結束了，但您的成全才剛開始——陪他參加新民班，一路走下去。",
+ doo:["佛堂渡人辦道、初一十五成全","佛規禮節及佛堂護持整理","法會壇務等各項工作","法會後成全道親上新民班"],
+ you:["學習佛規禮節，協助佛堂整理","初一、十五回佛堂參與","陪伴新求道道親參加新民班"]},
+{n:"班務組",e:"📋",c:"#2f9e8f",t:"道場教育",
+ hook:"用愛心帶班，<br>陪班員走得長遠",
+ core:"負責道場教育工作：道親求道後，從認同、信心、發心到學道、修道、講道、辦道、行道，都要靠道場教育細心灌溉。",
+ scene:"這週進修班要開班了。<b>您</b>清點講義與書訓，一份一份準備好，再傳訊息關心上週缺席的班員：「這週一起來上課喔！」",
+ doo:["護持道場班務運作","進修班開、畢班準備工作","講義、書訓統計與發放","書庫管理及應用"],
+ you:["協助講義、書訓的統計與發放","參與進修班服務與帶班協助","關心班員，陪伴學道始終如一"]},
+{n:"總務組",e:"🧰",c:"#8a6a3d",t:"無畏施",
+ hook:"默默協助，<br>成就每一場活動",
+ core:"道場的無畏施工作，負責台前台後大小細節、前置作業及善後，默默協助每一場活動成功。",
+ scene:"夜深了，佛堂還亮著燈。<b>您</b>和前賢們佈置場地、測試音響、整理花藝。明天大家走進來時，一切剛剛好——沒人知道是誰準備的。",
+ doo:["活動前佈置及事後環境整理","水電、音響、裝潢維修護持","重要活動必要品採購與出納","交通指揮及車輛調度"],
+ you:["協助場地佈置與事後整理","學習音響控制","有專業（如水電、醫療、園藝）可發揮所長"]},
+{n:"炊事組",e:"🍲",c:"#d9822b",t:"行功了愿",
+ hook:"默默行功了愿，<br>修煉自己的心性",
+ core:"配合道場法會及各項活動從事炊事工作，是實務修行中最具意義的事項之一。",
+ scene:"天還沒亮，廚房已飄出陣陣香味。<b>您</b>洗菜、切菜、煮素食，心裡想著：待會兒道親們吃得安心，才能專心聽道、參加法會。",
+ doo:["配合法會從事炊事工作","配合道場及各區活動炊事","炊事烹飪人才培訓研習","素食烹飪藝術研究與推廣"],
+ you:["在廚房協助洗菜、切菜、備料","參加炊事烹飪培訓研習"]},
+{n:"接待組",e:"🙏",c:"#d65a7a",t:"禮儀接待",
+ hook:"彰顯道場的<br>修行水平",
+ core:"負責道場禮儀與接待，維護道場形象，美化道場內涵，彰顯道場修行水平。",
+ scene:"一位從海外來的道親走進道場。<b>您</b>面帶微笑，得體地引導他進入佛堂。他感受到的，不只是禮貌，而是道場的莊嚴與溫暖。",
+ doo:["道場接待禮節的研究與推動","海外道親、來賓迎來送往","道親進出佛堂禮節之教導","活動接待任務執行與編組"],
+ you:["學習道場接待禮節","參加接待禮節培訓","注重言談、舉止及衣著"]},
+{n:"服務組",e:"🍵",c:"#e0a526",t:"服務為目的",
+ hook:"人生以服務<br>為目的",
+ core:"配合道場各種活動安排各項服務，使活動順利進行、更加完美；同時藉服務磨煉心性、培養耐性、圓融自己。",
+ scene:"法會進行中，<b>您</b>端茶水、打毛巾、維持秩序，還陪著小朋友帶動唱。一整天下來很累，但看到大家安心參加法會，心裡滿滿的。",
+ doo:["擔任進修班服務員","營隊及研習活動服務員","打毛巾、端茶水、秩序維持","法會服務員及活動安全維護"],
+ you:["擔任進修班服務員","協助端茶水、打毛巾","參加法會服務員輔訓"]},
+{n:"文書組",e:"📜",c:"#4a7bd0",t:"書面作業",
+ hook:"一筆一劃，<br>都是恭敬心",
+ core:"處理道場書面作業：資料建檔歸檔、書訓刊物、法會板書、訓文及會議記錄。",
+ scene:"法會還沒開始，<b>您</b>已經坐在桌前，一筆一劃地書寫三表五愿，整理板書資料。字寫得端正，心也跟著靜了下來。",
+ doo:["道場文書資料整理與建檔","三表五愿等資料的書寫","法會板書、仙佛訓文製作","各種會議之記錄"],
+ you:["協助資料整理與建檔","學習電腦文書製作","練習書法，怡養心性"]},
+{n:"大事紀組",e:"📸",c:"#3d8fd1",t:"修辦紀事",
+ hook:"為道場<br>留下歷史軌跡",
+ core:"從事長遠的道場修辦紀事，有照片存證、有影片可供傳承，使道場世代傳承、有史可稽。",
+ scene:"<b>您</b>舉起相機，拍下法會莊嚴的一刻。多年以後，新的道親翻開刊物、看見影片，就會知道：原來道場是這樣一路走過來的。",
+ doo:["道場活動攝影、錄影、錄音","各區活動重要紀事","道場刊物護持與資料提供","重要活動紀錄與投稿"],
+ you:["協助活動拍照、錄影","撰寫活動紀事、投稿","養成個人生活行事記錄"]},
+{n:"社服組",e:"🤝",c:"#c9504a",t:"服務社會",
+ hook:"關心社會、<br>服務社會",
+ core:"代表道場做好社會公共關係，關心社會、服務社會，以維護道場形象。",
+ scene:"<b>您</b>跟著前賢探訪獨居長者，也參加了淨灘和捐血活動。原來修道不只在佛堂裡，而是把愛帶到社會的每個角落。",
+ doo:["道場與外界之公共關係","敬老、恤孤、憐貧工作","急難救助及醫療義診","環保、捐血及慈善活動"],
+ you:["參與敬老、關懷探訪","參加環保、淨灘活動","參與捐血活動、做好敦親睦鄰"]},
+{n:"社教組",e:"📖",c:"#3aa864",t:"社會教育",
+ hook:"教化人心，<br>恢復良知良能",
+ core:"走入人群、走入校園從事社會教育，發揮道場教育影響力，教化人心，改善社會風氣。",
+ scene:"週末的讀經班裡，<b>您</b>陪著小朋友一句一句讀經。一個孩子說：「我今天回家要孝順爸媽！」那一刻，您看見了教化的力量。",
+ doo:["推動兒童及社區讀經班","舉辦青少年國學育樂營","表揚模範父母、提倡孝道","推動倫理教育及文化講座"],
+ you:["協助兒童讀經班","參與國學營隊服務","養成讀書的習慣"]}
+];
+const POS=[[10,84],[30,84],[50,84],[70,84],[90,84],[90,55],[70,55],[50,55],[30,55],[10,55]];
+G.forEach((g,i)=>{g.x=POS[i][0];g.y=POS[i][1]});
+const GOAL={x:50,y:28};
+let lit=new Set(),cur=-1,step=0;const STEPS=3;
+
+(function(){const s=document.getElementById('stars');
+for(let i=0;i<90;i++){const d=document.createElement('div');d.className='star';const z=Math.random()*2.5+1;
+d.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*70}%;animation-delay:${Math.random()*3}s`;s.appendChild(d)}
+for(let i=0;i<28;i++){const f=document.createElement('div');f.className='float-light';const dur=10+Math.random()*14;
+f.style.cssText=`left:${Math.random()*100}%;bottom:-20px;animation-duration:${dur}s;animation-delay:${-Math.random()*dur}s`;s.appendChild(f)}})();
+
+const lines=[...document.querySelectorAll('.intro-line')];let il=0;
+function introNext(){if(il<lines.length){lines[il++].classList.add('show');if(il===lines.length)setTimeout(()=>document.getElementById('startBtn').classList.add('show'),800)}else go('map')}
+document.getElementById('intro').addEventListener('click',e=>{if(e.target.id==='startBtn')go('map');else introNext()});
+setTimeout(introNext,500);
+
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');
+ document.getElementById('sky').classList.toggle('dawn',id==='finale'||lit.size===10)}
+
+function build(){
+ const pts=[...G.map(g=>[g.x,g.y]),[GOAL.x,GOAL.y]];let svg='';
+ for(let i=0;i<pts.length-1;i++){const [x1,y1]=pts[i],[x2,y2]=pts[i+1];let d;
+  if(x1===x2){const bx=x1+(x1>50?7:-7);d=`M${x1},${y1} C${bx},${y1} ${bx},${y2} ${x2},${y2}`;}
+  else if(i===pts.length-2){d=`M${x1},${y1} C${x1},${y2} ${x1},${y2} ${x2},${y2}`;}
+  else{d=`M${x1},${y1} L${x2},${y2}`;}
+  svg+=`<path class="seg" id="seg${i}" vector-effect="non-scaling-stroke" d="${d}"/>`}
+ document.getElementById('road').innerHTML=svg;
+ let h='';
+ G.forEach((g,i)=>{h+=`<button class="station" id="st${i}" style="left:${g.x}%;top:${g.y}%" onclick="openG(${i})">
+  <div class="lantern"><span class="no" title="點亮／熄滅" onclick="event.stopPropagation();toggleOne(${i})">${i+1}</span><span class="emo">${g.e}</span></div><div class="name">${g.n}</div><div class="time">${g.t}</div></button>`});
+ h+=`<button class="station goal" id="goal" style="left:${GOAL.x}%;top:${GOAL.y}%" onclick="showFinale()">
+  <div class="lantern"><span class="emo">🏮</span></div><div class="name">圓滿</div><div class="time">點亮十盞燈後開啟</div></button>`;
+ document.getElementById('stations').innerHTML=h;
+ document.getElementById('lamps').innerHTML=G.map((_,i)=>`<span id="lp${i}" title="${G[i].n}" onclick="toggleOne(${i})"></span>`).join('');
+ document.getElementById('pick').innerHTML=G.map(g=>`<button onclick="this.classList.toggle('sel')">${g.e} ${g.n}</button>`).join('');
+ refresh()}
+function refresh(){G.forEach((_,i)=>{const on=lit.has(i);document.getElementById('st'+i).classList.toggle('lit',on);
+  document.getElementById('lp'+i).classList.toggle('on',on);document.getElementById('seg'+i).classList.toggle('lit',on)});
+ document.getElementById('litNum').textContent=lit.size;document.getElementById('goal').classList.toggle('ready',lit.size===10);
+ document.getElementById('sky').classList.toggle('dawn',lit.size===10);
+ document.getElementById('allBtn').textContent=lit.size===10?'🌑 全部熄滅':'🪔 全部點亮'}
+
+function flashFx(){const f=document.getElementById('flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go')}
+function toast(html){const t=document.getElementById('toast');t.innerHTML=html;t.classList.remove('go');void t.offsetWidth;t.classList.add('go')}
+function toggleOne(i){if(lit.has(i))lit.delete(i);else{lit.add(i);flashFx()}refresh()}
+function toggleAll(){
+ if(lit.size===10){lit.clear();refresh();return}
+ const todo=G.map((_,i)=>i).filter(i=>!lit.has(i));
+ todo.forEach((i,k)=>setTimeout(()=>{lit.add(i);refresh();if(k===todo.length-1){flashFx();toast('✨ 十盞心燈，全部點亮！<br><span style="font-size:.6em">前往「圓滿」🏮</span>')}},k*180))}
+
+function openG(i){cur=i;step=0;const g=G[i];document.getElementById('card').style.setProperty('--c',g.c);
+ const L=document.getElementById('cLeft');L.style.background=`linear-gradient(160deg,${g.c},#2a1f3d)`;
+ L.innerHTML=`<div class="bigemo">${g.e}</div><div class="step">第 ${i+1} 站 ／ 共 10 站</div><h2>${g.n}</h2><div class="tm">✦ ${g.t}</div><div class="hook">「${g.hook}」</div><div class="core">${g.core}</div>`;
+ const chips=(a,cls)=>`<div class="grid2">${a.map(x=>`<span class="chip ${cls||''}">${x}</span>`).join('')}</div>`;
+ document.getElementById('cRight').innerHTML=`
+  <div class="scene">🎬 <b>想像一下……</b><br>${g.scene}</div>
+  <div class="block" id="b1"><h3>🔧 主要實務工作</h3>${chips(g.doo)}</div>
+  <div class="block" id="b2"><h3>🌱 您可以這樣開始</h3>${chips(g.you.map(x=>'✔ '+x),'start')}</div>
+  <div class="controls"><button class="back" onclick="closeP()">← 回地圖</button>
+   <div class="dots">${[0,1,2].map(k=>`<i id="d${k}"></i>`).join('')}</div>
+   <button class="next" id="nextBtn" onclick="nextStep()">繼續 →</button></div>`;
+ document.getElementById('panel').classList.add('active');updDots()}
+function updDots(){for(let k=0;k<STEPS;k++)document.getElementById('d'+k).classList.toggle('on',k<=step);
+ const b=document.getElementById('nextBtn');if(step>=STEPS-1){b.textContent='🪔 點亮這盞燈';b.classList.add('light')}else{b.textContent='繼續 →';b.classList.remove('light')}}
+function nextStep(){if(step<STEPS-1){step++;document.getElementById('b'+step).classList.add('show');updDots()}else lightUp()}
+function closeP(){document.getElementById('panel').classList.remove('active');cur=-1}
+function lightUp(){const g=G[cur];lit.add(cur);closeP();flashFx();
+ toast(`${g.e} ${g.n}的燈，亮了！`+(lit.size===10?'<br><span style="font-size:.6em">十盞全亮！前往「圓滿」🏮</span>':''));refresh()}
+
+function showFinale(){go('finale');const ls=[...document.querySelectorAll('.fin .l')];
+ ls.forEach(l=>l.classList.remove('show'));['pick','cta'].forEach(id=>document.getElementById(id).classList.remove('show'));
+ ls.forEach((l,i)=>setTimeout(()=>l.classList.add('show'),600+i*1800));
+ setTimeout(()=>document.getElementById('pick').classList.add('show'),600+ls.length*1800);
+ setTimeout(()=>document.getElementById('cta').classList.add('show'),1400+ls.length*1800)}
+function resetAll(){lit.clear();refresh();document.querySelectorAll('.pick button').forEach(b=>b.classList.remove('sel'));go('map')}
+function goIntro(){closeP();il=0;lines.forEach(l=>l.classList.remove('show'));document.getElementById('startBtn').classList.remove('show');go('intro');setTimeout(introNext,500)}
+function toggleFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});else document.exitFullscreen()}
+
+document.addEventListener('keydown',e=>{
+ if(e.key==='f'||e.key==='F'){toggleFS();return}
+ if(e.key==='Home'||e.key==='h'||e.key==='H'){goIntro();return}
+ const on=id=>document.getElementById(id).classList.contains('active');
+ if((e.key==='a'||e.key==='A')&&on('map')){toggleAll();return}
+ if(on('intro')&&(e.key==='ArrowRight'||e.key===' '||e.key==='Enter')){e.preventDefault();introNext();return}
+ if(on('panel')){if(e.key==='ArrowRight'||e.key===' '||e.key==='Enter'){e.preventDefault();nextStep()}if(e.key==='Escape')closeP();return}
+ if(on('map')){if(/^[0-9]$/.test(e.key))openG(e.key==='0'?9:+e.key-1);
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();const n=G.findIndex((_,i)=>!lit.has(i));n<0?showFinale():openG(n)}}
+ if(on('finale')&&e.key==='Escape')go('map')});
+/* ===== 課堂輕音樂（Web Audio 即時合成：柔和鋼琴＋分解和弦＋淡淡鋪底，免外部檔案） ===== */
+let AC=null,master=null,musicOn=true,musicStarted=false,seqTimer=null;
+const hz=m=>440*Math.pow(2,(m-69)/12);
+const BPM=70,BEAT=60/BPM;
+/* 和弦進行 C – G/B – Am – F – C – F – G – C（溫暖、明亮、不搶戲） */
+const PROG=[[48,55,64],[47,55,62],[45,52,60],[41,48,57],[48,55,64],[41,48,57],[43,50,59],[48,55,64]];
+/* 旋律：五聲音階，簡單好聽，每小節 4 拍（0=休止） */
+const MEL=[
+ [76,0,74,72],[74,0,71,0],[72,0,69,72],[69,0,0,0],
+ [76,79,76,74],[72,0,69,0],[71,74,72,71],[72,0,0,0],
+ [79,0,76,0],[74,76,74,71],[72,0,76,0],[77,0,0,0],
+ [76,0,72,0],[69,72,74,76],[74,0,71,74],[72,0,0,0]];
+function initAudio(){
+ AC=new (window.AudioContext||window.webkitAudioContext)();
+ master=AC.createGain();master.gain.value=0;
+ const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2600;
+ const dl=AC.createDelay();dl.delayTime.value=BEAT*0.75;const fb=AC.createGain();fb.gain.value=.22;const wet=AC.createGain();wet.gain.value=.35;
+ lp.connect(master);lp.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(master);
+ master.connect(AC.destination);master.lp=lp;}
+/* 柔和鋼琴音色 */
+function piano(m,t,vel,len){
+ [[1,'triangle',1],[2,'sine',.25],[3,'sine',.08]].forEach(([k,type,amp])=>{
+  const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=hz(m)*k;
+  const v=vel*amp;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.012);
+  g.gain.exponentialRampToValueAtTime(v*.35,t+.35);g.gain.exponentialRampToValueAtTime(.0001,t+len);
+  o.connect(g);g.connect(master.lp);o.start(t);o.stop(t+len+.05)})}
+/* 很淡的弦樂鋪底 */
+function pad(notes,t,dur){notes.forEach(m=>{const o=AC.createOscillator(),g=AC.createGain();
+ o.type='sine';o.frequency.value=hz(m+12);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.012,t+1.2);
+ g.gain.linearRampToValueAtTime(0,t+dur);o.connect(g);g.connect(master.lp);o.start(t);o.stop(t+dur+.1)})}
+let bar=0,nextT=0;
+function schedule(){
+ while(nextT<AC.currentTime+1.5){
+  const ch=PROG[bar%PROG.length],mel=MEL[bar%MEL.length],t0=nextT;
+  /* 左手：分解和弦 1-5-3-5 八分音符 */
+  const arp=[ch[0],ch[1],ch[2],ch[1],ch[0]+12,ch[1],ch[2],ch[1]];
+  arp.forEach((m,i)=>piano(m,t0+i*BEAT/2,i===0?.09:.05,BEAT*2.5));
+  pad(ch,t0,BEAT*4);
+  /* 右手：旋律（第一輪只彈伴奏，讓音樂慢慢進來） */
+  if(bar>=PROG.length) mel.forEach((m,i)=>{if(m)piano(m,t0+i*BEAT,.11,BEAT*3)});
+  bar++;nextT+=BEAT*4}
+ seqTimer=setTimeout(schedule,400)}
+function startMusic(){if(musicStarted||!musicOn)return;musicStarted=true;
+ if(!AC)initAudio();AC.resume();nextT=AC.currentTime+.2;schedule();
+ master.gain.cancelScheduledValues(AC.currentTime);master.gain.linearRampToValueAtTime(.55,AC.currentTime+4)}
+function toggleMusic(){musicOn=!musicOn;
+ document.getElementById('musicBtn').textContent=musicOn?'🎵 音樂：開':'🔇 音樂：關';
+ if(!AC){if(musicOn)startMusic();return}
+ const t=AC.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);
+ if(musicOn){AC.resume();if(!musicStarted)startMusic();else master.gain.linearRampToValueAtTime(.55,t+2)}
+ else master.gain.linearRampToValueAtTime(0,t+1.5)}
+/* 瀏覽器規定：需使用者第一次點擊／按鍵後才能播放 */
+['click','keydown'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target&&e.target.id==='musicBtn')return;startMusic()},{once:false}));
+document.addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M')toggleMusic()});
+build();
+</script>
+</body>
+</html>
